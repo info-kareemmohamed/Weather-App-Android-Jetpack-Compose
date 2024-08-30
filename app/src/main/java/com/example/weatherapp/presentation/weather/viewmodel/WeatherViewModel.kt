@@ -1,4 +1,4 @@
-package com.example.weatherapp.presentation
+package com.example.weatherapp.presentation.weather.viewmodel
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
