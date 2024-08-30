@@ -1,16 +1,21 @@
 package com.example.weatherapp.data.mappers
 
 
-import com.example.weatherapp.data.remote.WeatherDataDto
+import com.example.weatherapp.data.remote.DailyDataDto
+import com.example.weatherapp.data.remote.HourlyDataDto
 import com.example.weatherapp.data.remote.WeatherDto
+import com.example.weatherapp.domain.weather.DailyTemperature
 import com.example.weatherapp.domain.weather.WeatherData
 import com.example.weatherapp.domain.weather.WeatherInfo
 import com.example.weatherapp.domain.weather.WeatherType
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
+import java.util.Locale
 
 
-fun WeatherDataDto.toWeatherDataMap(): Map<Int, List<WeatherData>> {
+fun HourlyDataDto.toWeatherDataMap(): Map<Int, List<WeatherData>> {
     val weatherDataMap = mutableMapOf<Int, MutableList<WeatherData>>()
 
     for (index in time.indices) {
@@ -34,15 +39,33 @@ fun WeatherDataDto.toWeatherDataMap(): Map<Int, List<WeatherData>> {
 }
 
 
+fun DailyDataDto.toDailyTemperatureList(): List<DailyTemperature> {
+    return days.mapIndexed { index, dayString ->
+        DailyTemperature(
+            day = LocalDate.parse(dayString).dayOfWeek.getDisplayName(
+                TextStyle.FULL,
+                Locale.getDefault()
+            ),
+            maxTemperature = maxTemperatures[index],
+            minTemperature = minTemperatures[index],
+            weatherType = WeatherType.fromWMO(weatherCodes[index])
+        )
+    }
+}
+
 fun WeatherDto.toWeatherInfo(): WeatherInfo {
-    val weatherDataMap = weatherData.toWeatherDataMap()
-    val currentHour = if (LocalDateTime.now().minute < 30) LocalDateTime.now().hour else LocalDateTime.now().hour + 1
+    val weatherDataMap = hourlyData.toWeatherDataMap()
+    val currentHour =
+        if (LocalDateTime.now().minute < 30) LocalDateTime.now().hour else LocalDateTime.now().hour + 1
 
     // Accessing the current day's weather data, assuming the map starts with today as index 0.
     val currentWeatherData = weatherDataMap[0]?.find { it.time.hour == currentHour }
 
+
     return WeatherInfo(
-        weatherDataPerDay = weatherDataMap,
-        currentWeatherData = currentWeatherData
+        dailyWeatherData = weatherDataMap,
+        currentWeatherData = currentWeatherData,
+        dailyTemperature = dailyData.toDailyTemperatureList()
     )
 }
+
